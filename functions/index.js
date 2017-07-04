@@ -17,10 +17,53 @@
 
 // [START all]
 // [START import]
-const functions = require('firebase-functions');
+
+// firebase stuff
+// const functions = require('firebase-functions');
+// const admin = require('firebase-admin');
+
 var request = require('request');
+var Octokat = require('octokat')
+var atob = require('atob')
+var btoa = require('btoa')
 
-request('https://api.github.com/repos/always-green/languages/javascript/main.js', function (error, response, body) {
 
-})
+
+admin.initializeApp(functions.config().firebase);
+
+handleUser = function(snap) {
+  console.log(snap.val())
+  var octo = new Octokat({
+    token: snap.child('access_token').val()
+  })
+  var repo = octo.repos('jasongornall', 'always-green');
+  var config = {
+    message: 'always green',
+  }
+  return repo.contents('languages/javascript/main.js').fetch()
+  .then((info) => {
+    config.sha = info.sha
+    var value = parseInt(atob(info.content)) + 1 + ''
+    config.content = btoa(value)
+    return repo.contents('languages/javascript/main.js').add(config)
+  })
+  .then(function(info) {
+    Promise.resolve('success');
+  })
+  .catch(function(error) {
+    Promise.reject(error);
+  })
+}
+
+
+exports.addMessage = functions.https.onRequest((req, res) => {
+  admin.database().ref('/users').once('value')
+  .then(total_snapshot => {
+    Promise.all(total_snapshot.map(handleUser))
+  })
+  .then(function () {
+    console.log(" then :3 ends");
+  });
+});
+
 
