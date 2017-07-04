@@ -21,7 +21,7 @@
 // firebase stuff
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-
+var auth = require('basic-auth')
 var request = require('request');
 var Octokat = require('octokat')
 var atob = require('atob')
@@ -32,9 +32,12 @@ var btoa = require('btoa')
 admin.initializeApp(functions.config().firebase);
 
 
-
 exports.addMessage = functions.https.onRequest((req, res) => {
+  var credentials = auth(req);
 
+  if (!credentials || credentials.name !== functions.config().auth.name || credentials.pass !== functions.config().auth.pass) {
+    return Promise.reject('bad auth');
+  }
   admin.database().ref('/users').once('value')
   .then(total_snapshot => {
     var snaps = [];
