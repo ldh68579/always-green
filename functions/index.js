@@ -61,7 +61,8 @@ exports.addMessage = functions.https.onRequest((req, res) => {
         Promise.resolve('success');
       })
       .catch(function(error) {
-        Promise.reject(error);
+        console.log(error);
+        Promise.resolve('error', error);
       })
       snaps.push(promise);
     })
