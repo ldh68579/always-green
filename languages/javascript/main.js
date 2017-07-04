@@ -1,1 +1,1 @@
-#{parseInt(info.content) + 1}
+1
