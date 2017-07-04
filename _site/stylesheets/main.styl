@@ -12,10 +12,21 @@ body
     font-size 30px
     margin-bottom 30px
 
-  .github-login
+  .github-login, .github-logout
     margin-top 20px
     border: 1px solid #fff;
     border-radius: 15%;
     padding: 7px 10px;
     display: inline-block;
     cursor pointer
+#summary
+  margin-bottom 20px
+#connected
+  display none
+#disconnected
+  display block
+html.logged-in
+  #connected
+    display block
+  #disconnected
+    display none

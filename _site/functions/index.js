@@ -17,10 +17,61 @@
 
 // [START all]
 // [START import]
+
+// firebase stuff
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+var auth = require('basic-auth')
 var request = require('request');
+var Octokat = require('octokat')
+var atob = require('atob')
+var btoa = require('btoa')
 
-request('https://api.github.com/repos/always-green/languages/javascript/main.js', function (error, response, body) {
 
-})
+
+admin.initializeApp(functions.config().firebase);
+
+
+exports.addMessage = functions.https.onRequest((req, res) => {
+  var credentials = auth(req);
+
+  if (!credentials || credentials.name !== functions.config().auth.name || credentials.pass !== functions.config().auth.pass) {
+    return Promise.reject('bad auth');
+  }
+  admin.database().ref('/users').once('value')
+  .then(total_snapshot => {
+    var snaps = [];
+    total_snapshot.forEach(function(snap) {
+      console.log(snap.child('access_token').val());
+      var octo = new Octokat({
+        token: snap.child('access_token').val()
+      })
+      var repo = octo.repos('jasongornall', 'always-green');
+      var config = {
+        message: 'always green',
+      }
+      var promise = repo.contents('languages/javascript/main.js').fetch()
+      .then((info) => {
+        config.sha = info.sha
+        var value = parseInt(atob(info.content)) + 1 + ''
+        config.content = btoa(value)
+        return repo.contents('languages/javascript/main.js').add(config)
+      })
+      .then(function(info) {
+        Promise.resolve('success');
+      })
+      .catch(function(error) {
+        console.log(error);
+        Promise.resolve('error', error);
+      })
+      snaps.push(promise);
+    })
+
+    return Promise.all(snaps)
+  })
+  .then(function () {
+    res.status(200).send('ok');
+  });
+});
+
 
